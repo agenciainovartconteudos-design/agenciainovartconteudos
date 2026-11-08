@@ -10,6 +10,7 @@ import {
   UserCheck,
   UserPlus,
   Download,
+  TrendingUp,
 } from "lucide-react";
 import type { TemplateProps, Entity } from "../types";
 import { list, makeId } from "../types";
@@ -32,6 +33,7 @@ import {
   useToast,
 } from "../shared/ui";
 import { StrategyGenerator } from "../shared/strategy-generator";
+import { TrendTracker } from "../shared/trend-tracker";
 export default function Admin({ config }: TemplateProps) {
   const [view, setView] = useState("overview"),
     [users, setUsers] = useState(list(config, "users")),
@@ -59,6 +61,7 @@ export default function Admin({ config }: TemplateProps) {
     },
     { id: "roles", label: "Papéis & acesso", icon: <Shield size={18} /> },
     { id: "strategy", label: "Estratégia & IA", icon: <Activity size={18} /> },
+    { id: "trends", label: "Tendências", icon: <TrendingUp size={18} /> },
     { id: "settings", label: "Configurações", icon: <Settings size={18} /> },
   ];
   return (
@@ -72,11 +75,13 @@ export default function Admin({ config }: TemplateProps) {
               ? "Pessoas que fazem acontecer"
               : view === "roles"
                 ? "Cada pessoa, o acesso certo"
-                : "Do seu jeito"
+                : view === "trends"
+                  ? "O que está em alta no seu nicho"
+                  : "Do seu jeito"
         }
         description={config.content.description}
       >
-        {view !== "settings" && (
+        {view !== "settings" && view !== "strategy" && view !== "trends" && (
           <Button onClick={() => setCreate(true)}>
             <Plus size={17} />
             Adicionar usuário
@@ -87,6 +92,8 @@ export default function Admin({ config }: TemplateProps) {
         <SettingPanel />
       ) : view === "strategy" ? (
         <StrategyGenerator />
+      ) : view === "trends" ? (
+        <TrendTracker />
       ) : view === "roles" ? (
         <div className="three-grid">
           {["Administrador", "Editor", "Membro"].map((role, i) => (
