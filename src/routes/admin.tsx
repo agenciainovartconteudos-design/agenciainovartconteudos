@@ -66,6 +66,27 @@ function AdminPage() {
 
   return (
     <TemplateRoot config={typedConfig}>
+      <button
+        onClick={async () => {
+          await supabase.auth.signOut();
+          navigate({ to: "/auth" });
+        }}
+        style={{
+          position: "fixed",
+          top: 16,
+          right: 16,
+          zIndex: 999,
+          padding: "10px 16px",
+          borderRadius: 8,
+          border: "1px solid #152a3b22",
+          background: "#fff",
+          fontWeight: 700,
+          fontSize: 13,
+          cursor: "pointer",
+        }}
+      >
+        Sair
+      </button>
       <Admin config={typedConfig} />
     </TemplateRoot>
   );
