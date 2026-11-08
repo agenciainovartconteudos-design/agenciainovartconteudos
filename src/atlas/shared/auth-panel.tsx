@@ -27,6 +27,15 @@ export function AuthPanel({
     [error, setError] = useState("");
   const toast = useToast();
 
+  async function handleGoogle() {
+    setError("");
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/admin` },
+    });
+    if (err) setError("Não foi possível conectar com o Google.");
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
@@ -242,6 +251,24 @@ export function AuthPanel({
                   </Button>
                 )}
               </form>
+              {mode !== "recover" && (
+                <>
+                  <div className="between" style={{ margin: "20px 0", color: "var(--muted)", fontSize: 12, fontWeight: 700 }}>
+                    <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                    <span style={{ padding: "0 10px" }}>OU</span>
+                    <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                  </div>
+                  <Button variant="secondary" type="button" className="full" onClick={handleGoogle}>
+                    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.6 6.1 29.6 4 24 4C 11.8 7.3 21.3 7.3 29.9z"/>
+                      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+                      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.7 13.4-4.6l-6.2-5.2C29.2 35.9 26.7 36.8 24 36.8c-5.3 0-9.7-3.1-11.3-7.8l-6.6 5.1C9.6 39.6 16.2 44 24 44z"/>
+                      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.1-3.3 5.6-6.1 7.2l6.2 5.2C39.1 37.1 44 31.4 44 24c0-1.2-.1-2.4-.4-3.5z"/>
+                    </svg>
+                    Continuar com Google
+                  </Button>
+                </>
+              )}
               <div className="auth-demo">
                 <ShieldCheck size={17} />
                 <p>Acesso restrito à equipe. Suas credenciais são protegidas.</p>
