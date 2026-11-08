@@ -31,6 +31,7 @@ import {
   exportCSV,
   useToast,
 } from "../shared/ui";
+import { StrategyGenerator } from "../shared/strategy-generator";
 export default function Admin({ config }: TemplateProps) {
   const [view, setView] = useState("overview"),
     [users, setUsers] = useState(list(config, "users")),
@@ -57,6 +58,7 @@ export default function Admin({ config }: TemplateProps) {
       count: users.length,
     },
     { id: "roles", label: "Papéis & acesso", icon: <Shield size={18} /> },
+    { id: "strategy", label: "Estratégia & IA", icon: <Activity size={18} /> },
     { id: "settings", label: "Configurações", icon: <Settings size={18} /> },
   ];
   return (
@@ -83,6 +85,8 @@ export default function Admin({ config }: TemplateProps) {
       </PageHead>
       {view === "settings" ? (
         <SettingPanel />
+      ) : view === "strategy" ? (
+        <StrategyGenerator />
       ) : view === "roles" ? (
         <div className="three-grid">
           {["Administrador", "Editor", "Membro"].map((role, i) => (
