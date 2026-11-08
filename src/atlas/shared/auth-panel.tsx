@@ -4,12 +4,13 @@ import {
   EyeOff,
   LockKeyhole,
   CheckCircle2,
-  Mail,
   Layers,
   ShieldCheck,
 } from "lucide-react";
 import type { TemplateConfig } from "../types";
 import { Brand, Button, Photo, useToast } from "./ui";
+import { supabase } from "@/integrations/supabase/client";
+
 export function AuthPanel({
   config,
   onEnter,
@@ -21,8 +22,56 @@ export function AuthPanel({
 }) {
   const [mode, setMode] = useState("login"),
     [show, setShow] = useState(false),
-    [success, setSuccess] = useState(false);
+    [success, setSuccess] = useState(false),
+    [loading, setLoading] = useState(false),
+    [error, setError] = useState("");
   const toast = useToast();
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+    setLoading(true);
+    try {
+      if (mode === "login") {
+        const { error: err } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+        if (err) {
+          setError("E-mail ou senha incorretos.");
+          return;
+        }
+        toast("Login realizado com sucesso.");
+        onEnter();
+      } else if (mode === "register") {
+        const { error: err } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: { full_name: data.name },
+          },
+        });
+        if (err) {
+          setError(err.message === "User already registered" ? "Este e-mail já está cadastrado." : "Não foi possível criar a conta.");
+          return;
+        }
+        setSuccess(true);
+      } else {
+        const { error: err } = await supabase.auth.resetPasswordForEmail(data.email);
+        if (err) {
+          setError("Não foi possível enviar o e-mail de recuperação.");
+          return;
+        }
+        setSuccess(true);
+      }
+      form.reset();
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main id="main" className="auth-layout">
       <section className="auth-visual">
@@ -55,11 +104,11 @@ export function AuthPanel({
           {success ? (
             <div className="success-card">
               <CheckCircle2 size={48} />
-              <h2>Fluxo concluído</h2>
+              <h2>Tudo certo</h2>
               <p>
                 {mode === "recover"
-                  ? "A solicitação de recuperação foi simulada. Nenhum e-mail foi enviado."
-                  : "Seu cadastro de demonstração está pronto. Os dados não foram enviados nem armazenados."}
+                  ? "Se o e-mail informado existir, enviamos um link de recuperação de senha."
+                  : "Cadastro realizado. Verifique seu e-mail para confirmar a conta antes de entrar."}
               </p>
               <Button
                 onClick={() => {
@@ -106,21 +155,12 @@ export function AuthPanel({
                   </button>
                 </div>
               )}
-              <form
-                className="form-stack"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (mode === "login") {
-                    toast("Entrada demonstrativa, sem autenticação real.");
-                    onEnter();
-                  } else setSuccess(true);
-                  e.currentTarget.reset();
-                }}
-              >
+              <form className="form-stack" onSubmit={handleSubmit}>
                 {mode === "register" && (
                   <label className="field">
                     <span>Nome completo</span>
                     <input
+                      name="name"
                       autoComplete="name"
                       placeholder="Como podemos chamar você?"
                       required
@@ -130,6 +170,7 @@ export function AuthPanel({
                 <label className="field">
                   <span>Seu e-mail</span>
                   <input
+                    name="email"
                     type="email"
                     autoComplete="email"
                     placeholder="voce@exemplo.com"
@@ -141,13 +182,14 @@ export function AuthPanel({
                     <span>Senha</span>
                     <div className="password-wrap">
                       <input
+                        name="password"
                         type={show ? "text" : "password"}
-                      aria-label="Senha"
-                      aria-describedby="auth-password-hint"
+                        aria-label="Senha"
+                        aria-describedby="auth-password-hint"
                         autoComplete={
                           mode === "login" ? "current-password" : "new-password"
                         }
-                        placeholder="Use uma senha de exemplo"
+                        placeholder="Digite sua senha"
                         required
                         minLength={8}
                       />
@@ -160,13 +202,13 @@ export function AuthPanel({
                       </button>
                     </div>
                     <small id="auth-password-hint" className="field-hint">
-                      Mínimo de 8 caracteres. Use dados fictícios.
+                      Mínimo de 8 caracteres.
                     </small>
                   </label>
                 )}
                 {mode === "login" && (
                   <div className="between auth-options">
-                    <span>Acesso de demonstração</span>
+                    <span>Acesso restrito à equipe</span>
                     <button
                       type="button"
                       className="text-button"
@@ -176,18 +218,19 @@ export function AuthPanel({
                     </button>
                   </div>
                 )}
-                {mode === "register" && (
-                  <label className="auth-consent">
-                    <input type="checkbox" required />
-                    Entendo que este é um cadastro de demonstração.
-                  </label>
+                {error && (
+                  <p role="alert" style={{ color: "#a8493d", fontSize: 13, fontWeight: 600 }}>
+                    {error}
+                  </p>
                 )}
-                <Button type="submit" className="full">
-                  {mode === "login"
-                    ? "Entrar na demonstração"
-                    : mode === "register"
-                      ? "Simular cadastro"
-                      : "Simular recuperação"}
+                <Button type="submit" className="full" disabled={loading}>
+                  {loading
+                    ? "Enviando..."
+                    : mode === "login"
+                      ? "Entrar"
+                      : mode === "register"
+                        ? "Criar conta"
+                        : "Enviar link de recuperação"}
                 </Button>
                 {mode === "recover" && (
                   <Button
@@ -201,10 +244,7 @@ export function AuthPanel({
               </form>
               <div className="auth-demo">
                 <ShieldCheck size={17} />
-                <p>
-                  Ambiente de demonstração. Sem autenticação real ou
-                  armazenamento de senhas.
-                </p>
+                <p>Acesso restrito à equipe. Suas credenciais são protegidas.</p>
               </div>
             </>
           )}
