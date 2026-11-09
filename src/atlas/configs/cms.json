@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "templateId": "cms",
+  "locale": "pt-BR",
+  "branding": {
+    "name": "Margem",
+    "shortName": "M",
+    "tagline": "IDEIAS QUE MERECEM ESPAÇO"
+  },
+  "theme": {
+    "mode": "light",
+    "accent": "#ba5938",
+    "accentText": "#ffffff",
+    "background": "#f7f4ee",
+    "surface": "#ffffff",
+    "text": "#18232d",
+    "muted": "#73808e",
+    "line": "#152a3b12",
+    "serif": true,
+    "radius": 14
+  },
+  "content": {
+    "headline": "Uma boa história começa aqui.",
+    "description": "Organize suas ideias, encontre sua voz e publique com intenção.",
+    "eyebrow": "IDEIAS QUE MERECEM ESPAÇO",
+    "cta": "Começar agora",
+    "heroImage": "education.webp"
+  },
+  "collections": {
+    "posts": [
+      {
+        "id": "1",
+        "title": "O design das coisas que ficam",
+        "category": "Design",
+        "status": "Publicado",
+        "date": "28 set. 2026",
+        "person": "Marina Costa",
+        "image": "architecture.webp",
+        "description": "Existe algo especial nos espaços e objetos que atravessam o tempo. Nesta edição, olhamos para escolhas simples, materiais honestos e o valor de criar com intenção."
+      },
+      {
+        "id": "2",
+        "title": "Pequenos rituais, grandes dias",
+        "category": "Cultura",
+        "status": "Rascunho",
+        "date": "26 set. 2026",
+        "person": "Clara Alves",
+        "image": "beauty.webp",
+        "description": "Uma pausa. Uma página. Um novo começo. Os pequenos rituais ajudam a dar ritmo aos dias e a abrir espaço para boas ideias."
+      },
+      {
+        "id": "3",
+        "title": "Criar também é aprender",
+        "category": "Processo",
+        "status": "Publicado",
+        "date": "23 set. 2026",
+        "person": "Rafael Lima",
+        "image": "education.webp",
+        "description": "Experimentar é parte do caminho. Compartilhamos práticas para construir um processo criativo mais aberto e consistente."
+      }
+    ]
+  }
+}
