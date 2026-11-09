@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Loader2, Sparkles, LayoutGrid } from "lucide-react";
+import { Plus, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button, Panel, Empty, FormModal, Badge, useToast } from "./ui";
 
