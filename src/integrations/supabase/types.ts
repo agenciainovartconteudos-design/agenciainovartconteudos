@@ -61,6 +61,19 @@ export type Database = {
         Insert: { id?: string; asset_id: string; channel?: string; status?: string; sent_at?: string | null; created_at?: string };
         Update: Partial<Database["public"]["Tables"]["notifications"]["Insert"]>;
       };
+      campaigns: {
+        Row: {
+          id: string; owner_id: string; client_id: string | null; name: string; description: string | null;
+          channels: string[]; start_date: string | null; end_date: string | null; budget: number | null;
+          status: string; created_at: string; updated_at: string;
+        };
+        Insert: {
+          id?: string; owner_id: string; client_id?: string | null; name: string; description?: string | null;
+          channels?: string[]; start_date?: string | null; end_date?: string | null; budget?: number | null;
+          status?: string; created_at?: string; updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["campaigns"]["Insert"]>;
+      };
     };
     Enums: {
       app_role: "admin" | "editor";

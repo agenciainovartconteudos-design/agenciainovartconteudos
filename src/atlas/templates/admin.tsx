@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Building2,
   LayoutGrid,
+  Megaphone,
 } from "lucide-react";
 import type { TemplateProps } from "../types";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +36,7 @@ import { StrategyGenerator } from "../shared/strategy-generator";
 import { TrendTracker } from "../shared/trend-tracker";
 import { ClientsManager } from "../shared/clients-manager";
 import { KanbanBoard } from "../shared/kanban-board";
+import { CampaignsManager } from "../shared/campaigns-manager";
 
 type Member = {
   id: string;
@@ -131,6 +133,7 @@ export default function Admin({ config }: TemplateProps) {
     },
     { id: "roles", label: "Papéis & acesso", icon: <Shield size={18} /> },
     { id: "clients", label: "Clientes", icon: <Building2 size={18} /> },
+    { id: "campaigns", label: "Campanhas", icon: <Megaphone size={18} /> },
     { id: "kanban", label: "Kanban", icon: <LayoutGrid size={18} /> },
     { id: "strategy", label: "Estratégia & IA", icon: <Activity size={18} /> },
     { id: "trends", label: "Tendências", icon: <TrendingUp size={18} /> },
@@ -151,9 +154,11 @@ export default function Admin({ config }: TemplateProps) {
                   ? "O que está em alta no seu nicho"
                   : view === "clients"
                     ? "Cada marca, seu próprio espaço"
-                    : view === "kanban"
-                      ? "Do roteiro à aprovação"
-                      : "Do seu jeito"
+                    : view === "campaigns"
+                      ? "Planeje, lance e acompanhe"
+                      : view === "kanban"
+                        ? "Do roteiro à aprovação"
+                        : "Do seu jeito"
         }
         description={config.content.description}
       />
@@ -165,6 +170,8 @@ export default function Admin({ config }: TemplateProps) {
         <TrendTracker />
       ) : view === "clients" ? (
         <ClientsManager />
+      ) : view === "campaigns" ? (
+        <CampaignsManager />
       ) : view === "kanban" ? (
         <KanbanBoard />
       ) : view === "roles" ? (
