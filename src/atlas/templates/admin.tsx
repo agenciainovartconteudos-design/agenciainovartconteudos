@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Megaphone,
 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import type { TemplateProps } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -49,6 +50,7 @@ type Member = {
 const roleLabel = (r: "admin" | "editor") => (r === "admin" ? "Administrador" : "Editor");
 
 export default function Admin({ config }: TemplateProps) {
+  const navigate = useNavigate();
   const [view, setView] = useState("overview"),
     [members, setMembers] = useState<Member[]>([]),
     [loading, setLoading] = useState(true),
@@ -140,7 +142,18 @@ export default function Admin({ config }: TemplateProps) {
     { id: "settings", label: "Configurações", icon: <Settings size={18} /> },
   ];
   return (
-    <AppFrame config={config} nav={nav} active={view} onNav={setView}>
+    <AppFrame
+      config={config}
+      nav={nav}
+      active={view}
+      onNav={(id) => {
+        if (id === "campaigns") {
+          navigate({ to: "/campaigns" });
+          return;
+        }
+        setView(id);
+      }}
+    >
       <PageHead
         eyebrow="WORKSPACE / OPERAÇÃO"
         title={

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "templateId": "campaigns",
+  "locale": "pt-BR",
+  "branding": {
+    "name": "Nexo Admin",
+    "shortName": "NA",
+    "tagline": "CAMPANHAS, SEM PERDER O FOCO"
+  },
+  "theme": {
+    "mode": "light",
+    "accent": "#3676e6",
+    "accentText": "#ffffff",
+    "background": "#f4f6f8",
+    "surface": "#ffffff",
+    "text": "#18232d",
+    "muted": "#73808e",
+    "line": "#152a3b12",
+    "serif": false,
+    "radius": 14
+  },
+  "content": {
+    "headline": "Campanhas em um só lugar",
+    "description": "Planeje, lance e acompanhe o desempenho de cada campanha, em todos os canais, com dados reais do seu workspace.",
+    "eyebrow": "MARKETING / CAMPANHAS",
+    "cta": "Nova campanha",
+    "heroImage": ""
+  },
+  "collections": {}
+}
