@@ -1,25 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Users,
   Shield,
   Settings,
-  Plus,
   Pencil,
   Activity,
   UserCheck,
-  UserPlus,
   Download,
   TrendingUp,
   Building2,
   LayoutGrid,
 } from "lucide-react";
-import type { TemplateProps, Entity } from "../types";
-import { list, makeId } from "../types";
+import type { TemplateProps } from "../types";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AppFrame,
   PageHead,
-  Button,
   Stat,
   Panel,
   Avatar,
@@ -38,19 +35,88 @@ import { StrategyGenerator } from "../shared/strategy-generator";
 import { TrendTracker } from "../shared/trend-tracker";
 import { ClientsManager } from "../shared/clients-manager";
 import { KanbanBoard } from "../shared/kanban-board";
+
+type Member = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  created_at: string;
+  role: "admin" | "editor";
+};
+
+const roleLabel = (r: "admin" | "editor") => (r === "admin" ? "Administrador" : "Editor");
+
 export default function Admin({ config }: TemplateProps) {
   const [view, setView] = useState("overview"),
-    [users, setUsers] = useState(list(config, "users")),
+    [members, setMembers] = useState<Member[]>([]),
+    [loading, setLoading] = useState(true),
+    [loadError, setLoadError] = useState(""),
     [query, setQuery] = useState(""),
     [filter, setFilter] = useState("Todos"),
-    [edit, setEdit] = useState<Entity | null>(null),
-    [create, setCreate] = useState(false);
+    [edit, setEdit] = useState<Member | null>(null);
   const toast = useToast();
-  const filtered = users.filter(
-    (x) =>
-      (filter === "Todos" || x.status === filter) &&
-      `${x.title} ${x.email}`.toLowerCase().includes(query.toLowerCase()),
+
+  async function load() {
+    setLoading(true);
+    setLoadError("");
+    const [{ data: profiles, error: perr }, { data: roles, error: rerr }] = await Promise.all([
+      supabase.from("profiles").select("id, full_name, email, created_at").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id, role"),
+    ]);
+    if (perr || rerr) {
+      setLoadError("Não foi possível carregar as pessoas da equipe.");
+      setLoading(false);
+      return;
+    }
+    const roleMap = new Map((roles || []).map((r) => [r.user_id, r.role]));
+    setMembers(
+      (profiles || []).map((p) => ({
+        ...p,
+        role: (roleMap.get(p.id) as "admin" | "editor") || "editor",
+      })),
+    );
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const filtered = members.filter(
+    (m) =>
+      (filter === "Todos" || roleLabel(m.role) === filter) &&
+      `${m.full_name || ""} ${m.email || ""}`.toLowerCase().includes(query.toLowerCase()),
   );
+
+  async function saveEdit(d: Record<string, string>) {
+    if (!edit) return false;
+    const newRole: "admin" | "editor" = d.role === "Administrador" ? "admin" : "editor";
+    const { error: perr } = await supabase
+      .from("profiles")
+      .update({ full_name: d.full_name })
+      .eq("id", edit.id);
+    if (perr) {
+      toast("Não foi possível atualizar o nome.");
+      return false;
+    }
+    const { data: existing } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", edit.id)
+      .maybeSingle();
+    const roleErr = existing
+      ? (await supabase.from("user_roles").update({ role: newRole }).eq("id", existing.id)).error
+      : (await supabase.from("user_roles").insert({ user_id: edit.id, role: newRole })).error;
+    if (roleErr) {
+      toast("Não foi possível atualizar o papel.");
+      return false;
+    }
+    setMembers((prev) =>
+      prev.map((m) => (m.id === edit.id ? { ...m, full_name: d.full_name, role: newRole } : m)),
+    );
+    toast("Pessoa atualizada.");
+  }
+
   const nav = [
     {
       id: "overview",
@@ -61,7 +127,7 @@ export default function Admin({ config }: TemplateProps) {
       id: "users",
       label: "Usuários",
       icon: <Users size={18} />,
-      count: users.length,
+      count: members.length,
     },
     { id: "roles", label: "Papéis & acesso", icon: <Shield size={18} /> },
     { id: "clients", label: "Clientes", icon: <Building2 size={18} /> },
@@ -90,14 +156,7 @@ export default function Admin({ config }: TemplateProps) {
                       : "Do seu jeito"
         }
         description={config.content.description}
-      >
-        {view !== "settings" && view !== "strategy" && view !== "trends" && view !== "clients" && view !== "kanban" && (
-          <Button onClick={() => setCreate(true)}>
-            <Plus size={17} />
-            Adicionar usuário
-          </Button>
-        )}
-      </PageHead>
+      />
       {view === "settings" ? (
         <SettingPanel />
       ) : view === "strategy" ? (
@@ -110,35 +169,30 @@ export default function Admin({ config }: TemplateProps) {
         <KanbanBoard />
       ) : view === "roles" ? (
         <div className="three-grid">
-          {["Administrador", "Editor", "Membro"].map((role, i) => (
+          {(["admin", "editor"] as const).map((role) => (
             <Panel
               key={role}
-              title={role}
-              subtitle={`${users.filter((x) => x.role === role).length} usuários nesta função`}
+              title={roleLabel(role)}
+              subtitle={`${members.filter((m) => m.role === role).length} pessoas nesta função`}
             >
               <div className="panel-body">
                 <Shield size={30} color="var(--accent)" />
                 <p className="muted" style={{ fontSize: 14, margin: "20px 0" }}>
-                  {
-                    [
-                      "Visão completa da operação e configurações.",
-                      "Gestão dos conteúdos e atividades da equipe.",
-                      "Acesso ao próprio espaço e aos projetos compartilhados.",
-                    ][i]
-                  }
+                  {role === "admin"
+                    ? "Visão completa da operação, clientes e configurações."
+                    : "Gestão dos conteúdos, Kanban e aprovações da equipe."}
                 </p>
-                <Button
-                  variant="secondary"
+                <button
+                  className="btn secondary"
                   onClick={() => {
                     setView("users");
                     setQuery("");
                   }}
                 >
                   Gerenciar pessoas
-                </Button>
+                </button>
                 <p className="field-hint">
-                  Papéis ilustrativos. Permissões reais exigem validação no
-                  servidor.
+                  O papel é validado no servidor por política de segurança (RLS).
                 </p>
               </div>
             </Panel>
@@ -151,26 +205,26 @@ export default function Admin({ config }: TemplateProps) {
               <div className="stat-grid">
                 <Stat
                   label="Usuários no workspace"
-                  value={users.length}
-                  change="Pessoas cadastradas"
+                  value={members.length}
+                  change="Pessoas cadastradas no sistema"
                   icon={<Users size={18} />}
                 />
                 <Stat
-                  label="Ativos agora"
-                  value={users.filter((x) => x.status === "Ativo").length}
-                  change="Status do cadastro local"
+                  label="Administradores"
+                  value={members.filter((m) => m.role === "admin").length}
+                  change="Acesso total ao workspace"
                   icon={<UserCheck size={18} />}
                 />
                 <Stat
-                  label="Convites pendentes"
-                  value={users.filter((x) => x.status === "Convidado").length}
-                  change="Aguardando primeiro acesso"
-                  icon={<UserPlus size={18} />}
+                  label="Editores"
+                  value={members.filter((m) => m.role === "editor").length}
+                  change="Gestão de conteúdo e aprovações"
+                  icon={<Shield size={18} />}
                 />
                 <Stat
                   label="Papéis disponíveis"
-                  value="3"
-                  change="Organização por responsabilidade"
+                  value="2"
+                  change="Administrador e Editor"
                   icon={<Shield size={18} />}
                 />
               </div>
@@ -187,28 +241,27 @@ export default function Admin({ config }: TemplateProps) {
                 </Panel>
                 <Panel
                   title="Tudo em movimento"
-                  subtitle="Resumo dos cadastros"
+                  subtitle="Resumo da equipe"
                 >
                   <div className="row-list">
-                    {users.slice(0, 3).map((u) => (
-                      <div className="list-row" key={u.id}>
-                        <Avatar name={u.title} />
+                    {members.slice(0, 3).map((m) => (
+                      <div className="list-row" key={m.id}>
+                        <Avatar name={m.full_name || m.email || "Pessoa"} />
                         <div>
-                          <h3>{u.title}</h3>
-                          <p>{u.role}</p>
+                          <h3>{m.full_name || "Sem nome"}</h3>
+                          <p>{roleLabel(m.role)}</p>
                         </div>
-                        <Status value={u.status} />
+                        <Status value={roleLabel(m.role)} />
                       </div>
                     ))}
                   </div>
                   <div className="panel-body">
-                    <Button
-                      variant="ghost"
-                      className="full"
+                    <button
+                      className="btn ghost full"
                       onClick={() => setView("users")}
                     >
-                      Ver todos os usuários
-                    </Button>
+                      Ver todas as pessoas
+                    </button>
                   </div>
                 </Panel>
               </div>
@@ -216,17 +269,22 @@ export default function Admin({ config }: TemplateProps) {
           )}
           <Panel
             title={
-              view === "overview" ? "Usuários recentes" : "Gerenciar usuários"
+              view === "overview" ? "Pessoas recentes" : "Gerenciar pessoas"
             }
-            subtitle="Organize a equipe e os acessos"
+            subtitle="Equipe cadastrada via login (e-mail/senha ou Google)"
             action={
               <IconButton
-                label="Exportar usuários"
+                label="Exportar pessoas"
                 onClick={() =>
                   exportCSV(
-                    "usuarios.csv",
-                    ["Nome", "E-mail", "Papel", "Status"],
-                    filtered.map((x) => [x.title, x.email, x.role, x.status]),
+                    "equipe.csv",
+                    ["Nome", "E-mail", "Papel", "Criado em"],
+                    filtered.map((m) => [
+                      m.full_name || "",
+                      m.email || "",
+                      roleLabel(m.role),
+                      new Date(m.created_at).toLocaleDateString("pt-BR"),
+                    ]),
                   )
                 }
               >
@@ -234,9 +292,16 @@ export default function Admin({ config }: TemplateProps) {
               </IconButton>
             }
           >
+            {loadError && (
+              <div className="panel-body">
+                <p role="alert" style={{ color: "#a8493d", fontSize: 13, fontWeight: 600 }}>
+                  {loadError}
+                </p>
+              </div>
+            )}
             <div className="toolbar panel-body" style={{ paddingBottom: 0 }}>
               <Tabs
-                items={["Todos", "Ativo", "Convidado", "Suspenso"]}
+                items={["Todos", "Administrador", "Editor"]}
                 value={filter}
                 onChange={setFilter}
               />
@@ -246,39 +311,41 @@ export default function Admin({ config }: TemplateProps) {
                 placeholder="Buscar pessoas…"
               />
             </div>
-            {filtered.length ? (
+            {loading ? (
+              <div className="panel-body">
+                <p className="muted">Carregando…</p>
+              </div>
+            ) : filtered.length ? (
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
                       <th>Nome</th>
                       <th>Papel</th>
-                      <th>Status</th>
                       <th>Criado em</th>
                       <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((u) => (
-                      <tr key={u.id}>
+                    {filtered.map((m) => (
+                      <tr key={m.id}>
                         <td>
                           <div className="inline">
-                            <Avatar name={u.title} />
+                            <Avatar name={m.full_name || m.email || "Pessoa"} />
                             <div>
-                              <strong>{u.title}</strong>
-                              <span className="secondary">{u.email}</span>
+                              <strong>{m.full_name || "Sem nome"}</strong>
+                              <span className="secondary">{m.email}</span>
                             </div>
                           </div>
                         </td>
-                        <td>{u.role}</td>
                         <td>
-                          <Status value={u.status} />
+                          <Status value={roleLabel(m.role)} />
                         </td>
-                        <td>{u.date}</td>
+                        <td>{new Date(m.created_at).toLocaleDateString("pt-BR")}</td>
                         <td>
                           <IconButton
-                            label={`Editar ${u.title}`}
-                            onClick={() => setEdit(u)}
+                            label={`Editar ${m.full_name || m.email}`}
+                            onClick={() => setEdit(m)}
                           >
                             <Pencil size={15} />
                           </IconButton>
@@ -289,64 +356,34 @@ export default function Admin({ config }: TemplateProps) {
                 </table>
               </div>
             ) : (
-              <Empty />
+              <Empty
+                title="Nenhuma pessoa encontrada"
+                text="As pessoas aparecem aqui automaticamente quando criam conta pelo login."
+              />
             )}
             <div className="table-footer">
-              {filtered.length} de {users.length} pessoas
-              <span>Alterações locais</span>
+              {filtered.length} de {members.length} pessoas
+              <span>Dados reais do banco</span>
             </div>
           </Panel>
         </>
       )}
       <FormModal
-        open={create || !!edit}
-        onClose={() => {
-          setCreate(false);
-          setEdit(null);
-        }}
-        title={edit ? "Editar usuário" : "Adicionar usuário"}
+        open={!!edit}
+        onClose={() => setEdit(null)}
+        title="Editar pessoa"
+        description="Alterações são salvas direto no banco de dados."
         fields={[
-          { name: "title", label: "Nome completo", value: edit?.title },
-          { name: "email", label: "E-mail", type: "email", value: edit?.email },
+          { name: "full_name", label: "Nome completo", value: edit?.full_name || "" },
           {
             name: "role",
             label: "Papel",
             type: "select",
-            options: ["Administrador", "Editor", "Membro"],
-            value: edit?.role || "Membro",
-          },
-          {
-            name: "status",
-            label: "Status",
-            type: "select",
-            options: ["Ativo", "Convidado", "Suspenso"],
-            value: edit?.status || "Convidado",
+            options: ["Administrador", "Editor"],
+            value: edit ? roleLabel(edit.role) : "Editor",
           },
         ]}
-        onSubmit={(d) => {
-          if (users.some((u) => u.email === d.email && u.id !== edit?.id)) {
-            toast("Este e-mail já está cadastrado.");
-            return false;
-          }
-          setUsers((prev) =>
-            edit
-              ? prev.map((u) => (u.id === edit.id ? { ...u, ...d } : u))
-              : [
-                  {
-                    id: makeId(),
-                    title: d.title,
-                    email: d.email,
-                    role: d.role,
-                    status: d.status,
-                    date: "Nesta sessão",
-                  },
-                  ...prev,
-                ],
-          );
-          toast(
-            edit ? "Usuário atualizado." : "Usuário adicionado à demonstração.",
-          );
-        }}
+        onSubmit={saveEdit}
       />
     </AppFrame>
   );
