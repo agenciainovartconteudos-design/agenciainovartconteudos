@@ -260,6 +260,8 @@ export function AppFrame({
   children,
   actions,
   title,
+  userName = "Minha conta",
+  userEmail,
 }: {
   config: TemplateConfig;
   nav: NavItem[];
@@ -268,6 +270,8 @@ export function AppFrame({
   children: React.ReactNode;
   actions?: React.ReactNode;
   title?: string;
+  userName?: string;
+  userEmail?: string;
 }) {
   const [open, setOpen] = useState(false),
     [notifications, setNotifications] = useState(false);
@@ -287,7 +291,7 @@ export function AppFrame({
         <div className="workspace">
           <span className="workspace-icon">{config.branding.shortName}</span>
           <span>
-            Workspace principal<small>Plano de demonstração</small>
+            Workspace principal<small>Operação em produção</small>
           </span>
         </div>
         <div className="sidebar-label">ESPAÇO DE TRABALHO</div>
@@ -309,14 +313,10 @@ export function AppFrame({
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="demo-note">
-            <span className="live-dot" /> Ambiente de demonstração
-            <small>Dados fictícios · alterações locais</small>
-          </div>
           <div className="profile">
-            <Avatar name="Marina Costa" />
+            <Avatar name={userName} />
             <div>
-              Marina Costa<small>Seu espaço pessoal</small>
+              {userName}<small>{userEmail || "Seu espaço de trabalho"}</small>
             </div>
           </div>
         </div>
@@ -347,7 +347,7 @@ export function AppFrame({
             >
               <Bell size={18} />
             </IconButton>
-            <Avatar name="Marina Costa" size={31} />
+            <Avatar name={userName} size={31} />
           </div>
         </header>
         <main className="app-main" id="main">
@@ -363,7 +363,7 @@ export function AppFrame({
           <CheckCircle2 size={38} />
           <h3>Nenhuma notificação nova</h3>
           <p>As próximas atualizações da sua operação aparecerão aqui.</p>
-          <Badge>Demonstração local</Badge>
+          <Badge>Tudo em dia</Badge>
         </div>
       </Modal>
     </div>
@@ -566,7 +566,7 @@ export function FormModal({
   fields,
   onSubmit,
   submit = "Salvar",
-  description = "Alterações nesta demonstração ficam apenas na sessão.",
+  description = "As alterações são salvas direto no banco de dados.",
 }: {
   open: boolean;
   onClose: () => void;
@@ -662,7 +662,7 @@ export function ContactModal({
       ]}
       submit="Simular solicitação"
       onSubmit={(d) =>
-        toast(`Solicitação de ${d.name} registrada nesta demonstração.`)
+        toast(`Solicitação de ${d.name} registrada.`)
       }
     />
   );
@@ -861,9 +861,7 @@ export function Footer({
           </button>
         )}
         <small>
-          Template demonstrativo · {config.branding.name}
-          <br />
-          Imagens ilustrativas e dados fictícios.
+          {config.branding.name}
         </small>
       </div>
     </footer>

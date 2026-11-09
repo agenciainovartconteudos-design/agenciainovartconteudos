@@ -57,15 +57,17 @@ export default function Admin({ config }: TemplateProps) {
     [loadError, setLoadError] = useState(""),
     [query, setQuery] = useState(""),
     [filter, setFilter] = useState("Todos"),
-    [edit, setEdit] = useState<Member | null>(null);
+    [edit, setEdit] = useState<Member | null>(null),
+    [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
   const toast = useToast();
 
   async function load() {
     setLoading(true);
     setLoadError("");
-    const [{ data: profiles, error: perr }, { data: roles, error: rerr }] = await Promise.all([
+    const [{ data: profiles, error: perr }, { data: roles, error: rerr }, { data: sessionData }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, email, created_at").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
+      supabase.auth.getSession(),
     ]);
     if (perr || rerr) {
       setLoadError("Não foi possível carregar as pessoas da equipe.");
@@ -73,18 +75,31 @@ export default function Admin({ config }: TemplateProps) {
       return;
     }
     const roleMap = new Map((roles || []).map((r) => [r.user_id, r.role]));
-    setMembers(
-      (profiles || []).map((p) => ({
-        ...p,
-        role: (roleMap.get(p.id) as "admin" | "editor") || "editor",
-      })),
-    );
+    const list = (profiles || []).map((p) => ({
+      ...p,
+      role: (roleMap.get(p.id) as "admin" | "editor") || "editor",
+    }));
+    setMembers(list);
+    const uid = sessionData.session?.user?.id;
+    const me = list.find((m) => m.id === uid);
+    setCurrentUser({
+      name: me?.full_name || sessionData.session?.user?.email?.split("@")[0] || "Minha conta",
+      email: me?.email || sessionData.session?.user?.email || "",
+    });
     setLoading(false);
   }
 
   useEffect(() => {
     load();
   }, []);
+
+  const last7Days = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const key = d.toISOString().slice(0, 10);
+    const count = members.filter((m) => m.created_at?.slice(0, 10) === key).length;
+    return { label: d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""), count };
+  });
 
   const filtered = members.filter(
     (m) =>
@@ -153,6 +168,8 @@ export default function Admin({ config }: TemplateProps) {
         }
         setView(id);
       }}
+      userName={currentUser?.name}
+      userEmail={currentUser?.email}
     >
       <PageHead
         eyebrow="WORKSPACE / OPERAÇÃO"
@@ -251,12 +268,12 @@ export default function Admin({ config }: TemplateProps) {
               <div className="grid-2" style={{ marginBottom: 25 }}>
                 <Panel
                   title="Atividade do workspace"
-                  subtitle="Interações ilustrativas · últimos 7 dias"
+                  subtitle="Novas pessoas cadastradas · últimos 7 dias"
                   action={<span className="badge success">Visão semanal</span>}
                 >
                   <LineChart
-                    values={[18, 25, 20, 38, 31, 49, 42]}
-                    labels={["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]}
+                    values={last7Days.map((d) => d.count)}
+                    labels={last7Days.map((d) => d.label)}
                   />
                 </Panel>
                 <Panel
