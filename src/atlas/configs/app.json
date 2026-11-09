@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "templateId": "app",
+  "locale": "pt-BR",
+  "branding": {
+    "name": "Órbita",
+    "shortName": "Ó",
+    "tagline": "SEU DIA, EM SINTONIA"
+  },
+  "theme": {
+    "mode": "light",
+    "accent": "#6e60cf",
+    "accentText": "#ffffff",
+    "background": "#f4f6f8",
+    "surface": "#ffffff",
+    "text": "#18232d",
+    "muted": "#73808e",
+    "line": "#152a3b12",
+    "serif": false,
+    "radius": 14
+  },
+  "content": {
+    "headline": "Bom dia, Marina.",
+    "description": "Seu trabalho organizado. Seu foco no que importa.",
+    "eyebrow": "SEU DIA, EM SINTONIA",
+    "cta": "Começar agora",
+    "heroImage": "abstract.webp"
+  },
+  "collections": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Revisar identidade da Aurora",
+        "category": "Design",
+        "status": "Em andamento",
+        "date": "Hoje",
+        "person": "Marina"
+      },
+      {
+        "id": "2",
+        "title": "Enviar proposta comercial",
+        "category": "Comercial",
+        "status": "Pendente",
+        "date": "Hoje",
+        "person": "Rafael"
+      },
+      {
+        "id": "3",
+        "title": "Publicar nova landing page",
+        "category": "Marketing",
+        "status": "Concluído",
+        "date": "Amanhã",
+        "person": "Clara"
+      },
+      {
+        "id": "4",
+        "title": "Organizar referências",
+        "category": "Design",
+        "status": "Pendente",
+        "date": "Amanhã",
+        "person": "Marina"
+      }
+    ]
+  }
+}

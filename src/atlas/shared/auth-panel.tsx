@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Eye,
   EyeOff,
@@ -24,8 +24,37 @@ export function AuthPanel({
     [show, setShow] = useState(false),
     [success, setSuccess] = useState(false),
     [loading, setLoading] = useState(false),
+    [recovering, setRecovering] = useState(false),
     [error, setError] = useState("");
   const toast = useToast();
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  async function handleSetNewPassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+    setLoading(true);
+    try {
+      const { error: err } = await supabase.auth.updateUser({ password: data.password });
+      if (err) {
+        setError("Não foi possível atualizar a senha. Tente abrir o link do e-mail novamente.");
+        return;
+      }
+      toast("Senha atualizada com sucesso.");
+      setRecovering(false);
+      setMode("login");
+      onEnter();
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleGoogle() {
     setError("");
@@ -68,7 +97,9 @@ export function AuthPanel({
         }
         setSuccess(true);
       } else {
-        const { error: err } = await supabase.auth.resetPasswordForEmail(data.email);
+        const { error: err } = await supabase.auth.resetPasswordForEmail(data.email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
         if (err) {
           setError("Não foi possível enviar o e-mail de recuperação.");
           return;
@@ -110,7 +141,44 @@ export function AuthPanel({
           <Brand config={config} />
         </div>
         <div className="auth-box">
-          {success ? (
+          {recovering ? (
+            <div className="success-card">
+              <LockKeyhole size={48} />
+              <h2>Defina sua nova senha</h2>
+              <p>Escolha uma nova senha para continuar acessando sua conta da equipe.</p>
+              <form className="form-stack" onSubmit={handleSetNewPassword} style={{ textAlign: "left", width: "100%" }}>
+                <label className="field">
+                  <span>Nova senha</span>
+                  <div className="password-wrap">
+                    <input
+                      name="password"
+                      type={show ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder="Digite a nova senha"
+                      required
+                      minLength={8}
+                    />
+                    <button
+                      type="button"
+                      aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShow(!show)}
+                    >
+                      {show ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <small className="field-hint">Mínimo de 8 caracteres.</small>
+                </label>
+                {error && (
+                  <p role="alert" style={{ color: "#a8493d", fontSize: 13, fontWeight: 600 }}>
+                    {error}
+                  </p>
+                )}
+                <Button type="submit" className="full" disabled={loading}>
+                  {loading ? "Salvando..." : "Salvar nova senha"}
+                </Button>
+              </form>
+            </div>
+          ) : success ? (
             <div className="success-card">
               <CheckCircle2 size={48} />
               <h2>Tudo certo</h2>
