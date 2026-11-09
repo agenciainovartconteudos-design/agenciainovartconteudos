@@ -4,6 +4,7 @@ import Auth from "@/atlas/templates/auth";
 import { TemplateRoot } from "@/atlas/shared/ui";
 import type { TemplateConfig } from "@/atlas/types";
 import "@/atlas/shared/styles.css";
+import authImage from "@/assets/auth-content-studio.webp";
 
 const typedConfig = config as unknown as TemplateConfig;
 
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/auth")({
   }),
   component: () => (
     <TemplateRoot config={typedConfig}>
-      <Auth config={typedConfig} />
+      <Auth config={typedConfig} imageSrc={authImage} />
     </TemplateRoot>
   ),
 });
