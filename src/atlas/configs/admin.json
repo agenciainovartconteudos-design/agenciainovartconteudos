@@ -26,48 +26,5 @@
     "cta": "Começar agora",
     "heroImage": ""
   },
-  "collections": {
-    "users": [
-      {
-        "id": "1",
-        "title": "Marina Costa",
-        "email": "marina@example.com",
-        "role": "Administrador",
-        "status": "Ativo",
-        "date": "12 set. 2026"
-      },
-      {
-        "id": "2",
-        "title": "Rafael Lima",
-        "email": "rafael@example.com",
-        "role": "Editor",
-        "status": "Ativo",
-        "date": "14 set. 2026"
-      },
-      {
-        "id": "3",
-        "title": "Clara Alves",
-        "email": "clara@example.com",
-        "role": "Membro",
-        "status": "Convidado",
-        "date": "18 set. 2026"
-      },
-      {
-        "id": "4",
-        "title": "Pedro Rocha",
-        "email": "pedro@example.com",
-        "role": "Membro",
-        "status": "Ativo",
-        "date": "19 set. 2026"
-      },
-      {
-        "id": "5",
-        "title": "Júlia Mendes",
-        "email": "julia@example.com",
-        "role": "Editor",
-        "status": "Suspenso",
-        "date": "20 set. 2026"
-      }
-    ]
-  }
+  "collections": {}
 }

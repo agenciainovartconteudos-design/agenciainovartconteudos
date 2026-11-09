@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Megaphone, LogOut } from "lucide-react";
 import type { TemplateProps } from "../types";
@@ -12,6 +12,24 @@ export default function Campaigns({
 }: TemplateProps & { imageSrc?: string }) {
   const navigate = useNavigate();
   const [view, setView] = useState("campaigns");
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", user.id)
+        .maybeSingle();
+      setCurrentUser({
+        name: profile?.full_name || user.email?.split("@")[0] || "Minha conta",
+        email: profile?.email || user.email || "",
+      });
+    })();
+  }, []);
 
   const nav = [
     { id: "overview", label: "Voltar ao painel", icon: <ArrowLeft size={18} /> },
@@ -30,6 +48,8 @@ export default function Campaigns({
         }
         setView(id);
       }}
+      userName={currentUser?.name}
+      userEmail={currentUser?.email}
       actions={
         <button
           className="text-button"
